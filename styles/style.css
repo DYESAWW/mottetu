@@ -58,9 +58,3 @@ body {
         6px 6px 0 #a6adc8,
         -6px -6px 0 #a6adc8;
 }
-
-
-main {
-    position: relative;
-    z-index: 1;
-}
