@@ -1,60 +1,110 @@
 html,
 body {
-    font-family: "Jacquard 24 Charted", system-ui;
-    font-weight: 400;
-    font-style: normal;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
-    background: #1e1e2e;
+	width: 100vh;
+	height: 100vh;
+	margin: 0;
+	overflow: hidden;
+	background: #1e1e2e;
 }
 
 #ascii-background {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    margin-top: 64px;
-    padding: 0;
-    font-family: monospace;
-    font-size: 12px;
-    line-height: 1;
-    white-space: pre;
-    overflow: hidden;
-    color: #a6adc8;
-    pointer-events: none;
-    user-select: none;
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	margin-top: 64px;
+	padding: 0;
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1;
+	white-space: pre;
+	overflow: hidden;
+	color: #a6adc8;
+	pointer-events: none;
+	user-select: none;
 }
 
 .absolute-center {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
 }
 
+
+
 .center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.center-title {
+	position: fixed;
+	top: calc(50% - 150px);
+	left: 50%;
+	transform: translate(-50%, -50%)
 }
 
 .charted {
-  font-synthesis: none;
-  text-rendering: optimizeSpeed;
-  -webkit-font-smoothing: none;
+	font-synthesis: none;
+	text-rendering: optimizeSpeed;
+	-webkit-font-smoothing: none;
+}
+
+.gothic-font {
+	font-family: "Jacquard 24 Charted", system-ui;
+	font-weight: 400;
+	font-style: normal;
+	color: #cdd6f4;
+}
+
+.icon-font {
+	font-family: "Yarndings 12", system-ui;
+	font-weight: 400;
+	font-style: normal;
+	color: #cdd6f4;
+}
+
+.roboto-flex-font {
+	font-family: "Roboto Flex", sans-serif;
+	font-optical-sizing: auto;
+	font-style: normal;
+	font-weight: 800;
+	font-stretch: 120%;
+	color: #cdd6f4;
+	font-variation-settings:
+		"GRAD" 50,
+		"XOPQ" 130,
+		"YOPQ" 90,
+		"XTRA" 480;
 }
 
 .text-box {
-    font-size: xx-large;
-    max-width: 600px;
-    padding-left: 24px;
-    padding-right: 24px;
-    border-radius: 10px;
-    background: #1e1e2e;
-    color: #cdd6f4;
-    border: 4px solid #a6adc8;
-    box-shadow:
-        6px 6px 0 #a6adc8,
-        -6px -6px 0 #a6adc8;
+	font-size: xx-large;
+	max-width: 600px;
+	padding-left: 24px;
+	padding-right: 24px;
+	border-radius: 10px;
+	background: #1e1e2e;
+	color: #cdd6f4;
+	border: 4px solid #a6adc8;
+	box-shadow:
+		6px 6px 0 #a6adc8,
+		-6px -6px 0 #a6adc8;
+}
+
+#cat {
+	position: absolute;
+	left: calc(50% - 64px);
+	top:  calc(50% - 64px);
+	width: 128px; height: 128px;
+	transition: left .35s ease-out, top .35s ease-out;
+}
+
+.sprite {
+	width: 32px; height: 32px;        /* one frame size*/
+	background: url("/assets/cat.png") no-repeat;
+	image-rendering: pixelated;
+	transform: scale(4);
+	transform-origin: top left;
 }
