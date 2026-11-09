@@ -22,6 +22,13 @@ Ainukene eesmärk mida sel veebilehel ikkagi võib olla on tekitada emotsioone �
 
 Naermine pikendab elu, eks?
 
+#
+
+### Tõsine "Mis see on?"
+Projektil on 4 lehte kokku. 1 esileht ja 3 alamlehte. Esilehel teeme nuppu, mis viib juhuslikult ühele kolmest lehest. 3 alamlehte me paneme eraldi ja iseseisvalt minimänge, infot jne. Nad ei ole väga palju seotud omavahel, et nad tunneks juhuslikud. Kasutame kõik üht ja sama `style.css`, et lehete välimus oleks ühine. JavaScript'i failid on eraldi iga lehele.
+
+#
+
 #### Arendajad:
 - Karl Kaspar Meier 🤫
 - Konstantin Razdolski 🪤🍻
