@@ -14,6 +14,32 @@ const SWING_SWAY_DEG = 2;
 const DROP_DIST = 120;
 const DROP_MS = 350;
 
+const FLEE_SPREAD_DEG = 60;
+// If the cat is cornered and nothing fits inside the cone, widen to +/- 90deg (slide along the wall,
+// still never toward the cursor).
+const FLEE_SPREAD_FALLBACK_DEG = 90;
+
+// ---- shadow ----
+const SHADOW_GRAB_SCALE = 0.55;    // shadow size while held
+const SHADOW_GRAB_OPACITY = 0.5;
+const LIFT_PX = 14;                // how far the sprite rises above its shadow while held
+const GRAB_MS = 150;
+const SHADOW_BOTTOM = "14%";       // distance from the bottom of the cat (bigger = shadow closer / higher up)
+const SHADOW_WIDTH = "55%";
+const SHADOW_HEIGHT = "16%";
+const SHADOW_PX_W = 14, SHADOW_PX_H = 5;   // resolution of the pixel-art shadow
+// [max normalised distance from centre, alpha]: checked in order, so edges get the lowest alpha
+const SHADOW_LEVELS = [[0.55, 0.45], [0.8, 0.28], [1.0, 0.12]];
+
+// ---- footsteps ----
+const STEP_DIST = 22;              // px travelled between two prints
+const PAW_SIZE = 4;                // px, side of each square footstep
+const PAW_SIDE_OFFSET = 5;         // px, distance of each paw from the centre line of travel
+const PAW_COLOR = "#000000";
+const PAW_OPACITY = 0.35;
+const PAW_LIFETIME_MS = 4000;      // time before a print has fully faded
+const FEET_Y_FRAC = 0.35;          // feet position below the cat's centre, as a fraction of cat height
+
 const ANIMS = {
 	sitting:       { frames: range(352, 360), fps: 3 }, //played by default
 
@@ -53,6 +79,131 @@ const sprite = cat.querySelector(".sprite");
 cat.style.touchAction = "none";   //  drag on touchscreens instead of scrolling
 cat.style.userSelect = "none";
 cat.style.cursor = "grab";
+
+// ---- shadow ----
+if (getComputedStyle(sprite).position === "static") sprite.style.position = "relative";
+sprite.style.zIndex = "1";
+
+function makePixelShadowURL() {
+	const c = document.createElement("canvas");
+	c.width = SHADOW_PX_W;
+	c.height = SHADOW_PX_H;
+	const g = c.getContext("2d");
+	for (let py = 0; py < SHADOW_PX_H; py++) {
+		for (let px = 0; px < SHADOW_PX_W; px++) {
+			// normalised distance of the pixel centre from the ellipse centre (1 = ellipse edge)
+			const dx = (px + 0.5 - SHADOW_PX_W / 2) / (SHADOW_PX_W / 2);
+			const dy = (py + 0.5 - SHADOW_PX_H / 2) / (SHADOW_PX_H / 2);
+			const d = Math.hypot(dx, dy);
+			let a = 0;
+			for (const [maxD, alpha] of SHADOW_LEVELS) {
+				if (d <= maxD) { a = alpha; break; }
+			}
+			if (a > 0) {
+				g.fillStyle = `rgba(0,0,0,${a})`;
+				g.fillRect(px, py, 1, 1);
+			}
+		}
+	}
+	return c.toDataURL();
+}
+
+const shadow = document.createElement("div");
+Object.assign(shadow.style, {
+	position: "absolute",
+	left: "50%",
+	bottom: SHADOW_BOTTOM,
+	width: SHADOW_WIDTH,
+	height: SHADOW_HEIGHT,
+	translate: "-50% 0",
+	backgroundImage: `url(${makePixelShadowURL()})`,
+	backgroundSize: "100% 100%",
+	imageRendering: "pixelated",
+	pointerEvents: "none",
+	zIndex: "0",
+	scale: "1",
+	opacity: "1",
+});
+cat.prepend(shadow);
+
+function setLifted(lifted, ms, easing) {
+	const t = `${ms}ms ${easing}`;
+	shadow.style.transition = `scale ${t}, opacity ${t}`;
+	sprite.style.transition = `translate ${t}`;
+	shadow.style.scale = lifted ? String(SHADOW_GRAB_SCALE) : "1";
+	shadow.style.opacity = lifted ? String(SHADOW_GRAB_OPACITY) : "1";
+	sprite.style.translate = lifted ? `0 -${LIFT_PX}px` : "0 0";
+}
+
+// ---- footsteps ----
+const stepLayer = document.createElement("div");
+Object.assign(stepLayer.style, {
+	position: "fixed",
+	inset: "0",
+	pointerEvents: "none",
+	overflow: "hidden",
+	zIndex: "0",
+});
+document.body.appendChild(stepLayer);
+// keep the cat above the prints
+if (getComputedStyle(cat).zIndex === "auto") cat.style.zIndex = "1";
+
+function placePaw(x, y, heading, side) {
+	// side = +1 / -1: the paw is shifted perpendicular to the direction of travel
+	const px = x + Math.cos(heading + Math.PI / 2) * PAW_SIDE_OFFSET * side;
+	const py = y + Math.sin(heading + Math.PI / 2) * PAW_SIDE_OFFSET * side;
+
+	const paw = document.createElement("div");
+	Object.assign(paw.style, {
+		position: "absolute",
+		left: px - PAW_SIZE / 2 + "px",
+		top: py - PAW_SIZE / 2 + "px",
+		width: PAW_SIZE + "px",
+		height: PAW_SIZE + "px",
+		backgroundColor: PAW_COLOR,
+		opacity: String(PAW_OPACITY),
+		transition: `opacity ${PAW_LIFETIME_MS}ms ease-in`,
+	});
+	stepLayer.appendChild(paw);
+
+	// start the fade on the next frame, then clean up
+	requestAnimationFrame(() => requestAnimationFrame(() => { paw.style.opacity = "0"; }));
+	setTimeout(() => paw.remove(), PAW_LIFETIME_MS + 100);
+}
+
+function feetPoint() {
+	const r = cat.getBoundingClientRect();
+	return { x: r.left + r.width / 2, y: r.top + r.height / 2 + r.height * FEET_Y_FRAC };
+}
+
+// Each run gets its own token. Starting a new run invalidates the previous loop, so two loops
+// can never be alive at once (when the cat flees again right as the last run ends, `moving`
+// flips false -> true within the same tick and the old loop would otherwise keep going).
+let stepToken = 0;
+
+function startFootsteps(heading) {
+	const myToken = ++stepToken;
+	let last = feetPoint();
+	let dist = 0;
+	let side = 1;
+
+	placePaw(last.x, last.y, heading, side);
+	side = -side;
+
+	function tick() {
+		if (!moving || myToken !== stepToken) return;   // stops on arrival, when grabbed, or when superseded
+		const p = feetPoint();
+		dist += Math.hypot(p.x - last.x, p.y - last.y);
+		last = p;
+		while (dist >= STEP_DIST) {
+			dist -= STEP_DIST;
+			placePaw(p.x, p.y, heading, side);
+			side = -side;                      // left paw, right paw, left paw ...
+		}
+		requestAnimationFrame(tick);
+	}
+	requestAnimationFrame(tick);
+}
 
 function showFrame(index) {
 	const col = index % COLS;
@@ -95,6 +246,7 @@ function scheduleIdle() {
 	clearTimeout(idleTimer);
 	if (IDLE_ANIMS.length === 0) return;
 	idleTimer = setTimeout(() => {
+		if (cat.hidden) { scheduleIdle(); return; }   // still in the box: try again later
 		if (moving || dragging) return;
 		// pick a random idle animation, avoiding an immediate repeat when possible
 		const pool = IDLE_ANIMS.length > 1
@@ -116,18 +268,31 @@ function directionFor(dx, dy) {
 	return DIRECTIONS[(sector + 8) % 8];
 }
 
-function pickTarget() {
+// Pick a run-away target relative to where the cursor entered the cat.
+function pickTarget(cursorX, cursorY) {
 	const x = cat.offsetLeft, y = cat.offsetTop;
 	const maxX = innerWidth  - cat.offsetWidth;
 	const maxY = innerHeight - cat.offsetHeight;
 
+	// direction pointing from the cursor through the cat's centre = "straight away"
+	const r = cat.getBoundingClientRect();
+	const awayAngle = Math.atan2(
+		(r.top  + r.height / 2) - cursorY,
+		(r.left + r.width  / 2) - cursorX
+	);
+
 	let nx = x, ny = y;
-	for (let tries = 0; tries < 10; tries++) {
-		const angle = Math.random() * Math.PI * 2;
-		const dist = MIN_DIST + Math.random() * (MAX_DIST - MIN_DIST);
-		nx = x + Math.cos(angle) * dist;
-		ny = y + Math.sin(angle) * dist;
-		if (nx >= 0 && nx <= maxX && ny >= 0 && ny <= maxY) break;  // fits on screen
+	let found = false;
+	for (const spreadDeg of [FLEE_SPREAD_DEG, FLEE_SPREAD_FALLBACK_DEG]) {
+		const spread = spreadDeg * Math.PI / 180;
+		for (let tries = 0; tries < 10 && !found; tries++) {
+			const a = awayAngle + (Math.random() * 2 - 1) * spread;
+			const dist = MIN_DIST + Math.random() * (MAX_DIST - MIN_DIST);
+			nx = x + Math.cos(a) * dist;
+			ny = y + Math.sin(a) * dist;
+			if (nx >= 0 && nx <= maxX && ny >= 0 && ny <= maxY) found = true;   // fits on screen
+		}
+		if (found) break;
 	}
 	// fallback: clamp if no random try fit
 	nx = Math.max(0, Math.min(maxX, nx));
@@ -137,10 +302,35 @@ function pickTarget() {
 
 let moving = false, dragging = false, moveTimer;
 
-cat.addEventListener("mouseenter", () => {
-	if (moving || dragging) return;
+// last known cursor position (mouseenter won't fire again if the cursor never leaves the cat)
+let mouseX = null, mouseY = null;
+document.addEventListener("pointermove", (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
-	const { x, y, nx, ny } = pickTarget();
+function cursorOverCat() {
+	if (mouseX === null) return false;
+	const r = cat.getBoundingClientRect();
+	return mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom;
+}
+
+cat.addEventListener("mouseenter", (e) => {
+	mouseX = e.clientX; mouseY = e.clientY;
+	flee(e.clientX, e.clientY);
+});
+
+// true while the CSS jump-out animation (cat leaving the box) is running
+function jumpingOut() {
+	return cat.getAnimations().some(a => a.animationName === "jump-out");
+}
+
+// the cursor is usually still on the cat when it appears (you just clicked the box there)
+cat.addEventListener("animationend", (e) => {
+	if (e.animationName === "jump-out" && cursorOverCat()) flee(mouseX, mouseY);
+});
+
+function flee(cursorX, cursorY) {
+	if (moving || dragging || jumpingOut()) return;
+
+	const { x, y, nx, ny } = pickTarget(cursorX, cursorY);
 	if (Math.hypot(nx - x, ny - y) < 1) return;   // nowhere to go
 
 	moving = true;
@@ -151,11 +341,15 @@ cat.addEventListener("mouseenter", () => {
 	cat.style.left = nx + "px";
 	cat.style.top  = ny + "px";
 
+	startFootsteps(Math.atan2(ny - y, nx - x));
+
 	moveTimer = setTimeout(() => {
 		moving = false;
 		goSitting();
+		// the cursor may still be on the cat (e.g. it followed or was parked here): run again
+		if (cursorOverCat()) flee(mouseX, mouseY);
 	}, MOVE_MS);
-});
+}
 
 // ---- swing ----
 cat.style.transformOrigin = "50% 50%";
@@ -214,7 +408,7 @@ cat.addEventListener("pointerdown", (e) => {
 	// stop a run-away or fall in progress and freeze the cat where it is right now
 	clearTimeout(moveTimer);
 	clearTimeout(idleTimer);
-	moving = false;
+	moving = false;                                // also stops the footstep loop
 	const cs = getComputedStyle(cat);
 	const curLeft = cs.left, curTop = cs.top;      // current animated position
 	cat.style.transition = "none";
@@ -225,6 +419,7 @@ cat.addEventListener("pointerdown", (e) => {
 	cat.setPointerCapture(e.pointerId);
 	cat.style.cursor = "grabbing";
 	play("dragged");
+	setLifted(true, GRAB_MS, "ease-out");          // cat rises, shadow shrinks
 
 	lastPX = e.clientX; lastPT = e.timeStamp;
 	cursorVx = 0;
@@ -256,6 +451,9 @@ function endDrag() {
 	const targetY = Math.min(maxY, cat.offsetTop + DROP_DIST);
 	cat.style.transition = `top ${DROP_MS}ms ease-in`;   // ease-in feels like gravity
 	cat.style.top = targetY + "px";
+
+	// the shadow grows back over the same time the cat descends, same easing
+	setLifted(false, DROP_MS, "ease-in");
 }
 cat.addEventListener("pointerup", endDrag);
 cat.addEventListener("pointercancel", endDrag);
