@@ -4,7 +4,7 @@ const FRAME_W = 32, FRAME_H = 32;
 const COLS = 11;
 
 const MOVE_MS = 800;
-const MIN_DIST = 120, MAX_DIST = 225;
+const MIN_DIST = 150, MAX_DIST = 250;
 const IDLE_DELAY_MS = 5000;
 
 const SWING_MAX_DEG = 8;
@@ -43,23 +43,71 @@ const FEET_Y_FRAC = 0.35;          // feet position below the cat's centre, as a
 const ANIMS = {
 	sitting:       { frames: range(352, 360), fps: 3 }, //played by default
 
-	idleItchLeft:  { frames: range(429, 440), fps: 6, loops: 1 },
-	idleItchRight: { frames: range(441, 450), fps: 6, loops: 1 },
+	idleItchLeft:   { frames: range(429, 440), fps: 6, loops: 1 },
+	idleItchRight:  { frames: range(441, 450), fps: 6, loops: 1 },
+	idleWashSit:    { frames: range(396, 405), fps: 4, loops: 1 },
+	idleMeowSit:    { frames: range(308, 311), fps: 3, loops: 1 },
+	idleSleepRight: { frames: range(198, 200), fps: 1, loops: 4 },
+	idleSleepLeft:  { frames: range(209, 211), fps: 1, loops: 4 },
+	idleStandUp:    { frames: range(572, 576), fps: 2, loops: 1 },
 
-	dragged:       { frames: [574],           fps: 8 },
-	dropping:      { frames: [574, 573, 572], fps: 8, loops: 1 }, 
+	dragged:        { frames: [574],           fps: 8 },
+	dropping:       { frames: [574, 573, 572], fps: 8, loops: 1 }, 
 
-	walkRight:     { frames: range(66, 74),   fps: 8 },
-	walkRightDown: { frames: range(99, 105),  fps: 8 },
-	walkDown:      { frames: range(44, 47),   fps: 8 },
-	walkLeftDown:  { frames: range(88, 94),   fps: 8 },
-	walkLeft:      { frames: range(77, 85),   fps: 8 },
-	walkLeftUp:    { frames: range(121, 127), fps: 8 },
-	walkUp:        { frames: range(55, 59),   fps: 8 },
-	walkRightUp:   { frames: range(110, 116), fps: 8 },
+	walkRight:      { frames: range(66, 74),   fps: 8 },
+	walkRightDown:  { frames: range(99, 105),  fps: 8 },
+	walkDown:       { frames: range(44, 47),   fps: 8 },
+	walkLeftDown:   { frames: range(88, 94),   fps: 8 },
+	walkLeft:       { frames: range(77, 85),   fps: 8 },
+	walkLeftUp:     { frames: range(121, 127), fps: 8 },
+	walkUp:         { frames: range(55, 59),   fps: 8 },
+	walkRightUp:    { frames: range(110, 116), fps: 8 },
 };
 
-const IDLE_ANIMS = ["idleItchLeft", "idleItchRight"]; //idle anims pool
+const IDLE_ANIMS = ["idleItchLeft", "idleItchRight", "idleWashSit", "idleMeowSit", "idleSleepRight", "idleSleepLeft", "idleStandUp"]; //idle anims pool
+
+// ---- sound effects ----
+const SOUNDS = {
+	idleMeowSit: "/assets/meow.mp3",
+	awp:  "/assets/awp.mp3",     // example: add more sounds here
+};
+const SOUND_VOLUME = 0.1;          // from 0 to 1
+
+const sounds = {};
+for (const [name, src] of Object.entries(SOUNDS)) {
+	const audio = new Audio(src);
+	audio.preload = "auto";
+	audio.volume = SOUND_VOLUME;
+	sounds[name] = audio;
+}
+
+// resolves true if the sound started, false if it couldn't (unknown name, or blocked by the browser)
+function playSound(name) {
+	const audio = sounds[name];
+	if (!audio) return Promise.resolve(false);
+	audio.currentTime = 0;
+	return audio.play().then(
+		() => true,
+		(err) => { console.warn("cat sound:", err.message); return false; }
+	);
+}
+
+// plays a sound `delayMs` after the page has finished loading
+function playSoundAfterLoad(name, delayMs = 0) {
+	if (!sounds[name]) return;
+
+	const run = () => setTimeout(async () => {
+		if (await playSound(name)) return;
+		const retry = () => playSound(name);
+		addEventListener("pointerdown", retry, { once: true });
+		addEventListener("keydown", retry, { once: true });
+	}, delayMs);
+
+	if (document.readyState === "complete") run();
+	else addEventListener("load", run, { once: true });
+}
+
+playSoundAfterLoad("awp", 1650);
 
 // do not change order. otherwise trigonometric functions will break
 const DIRECTIONS = [
@@ -108,6 +156,9 @@ function makePixelShadowURL() {
 	return c.toDataURL();
 }
 
+const SHADOW_IMAGE = `url(${makePixelShadowURL()})`;
+document.documentElement.style.setProperty("--pixel-shadow", SHADOW_IMAGE);
+
 const shadow = document.createElement("div");
 Object.assign(shadow.style, {
 	position: "absolute",
@@ -116,7 +167,7 @@ Object.assign(shadow.style, {
 	width: SHADOW_WIDTH,
 	height: SHADOW_HEIGHT,
 	translate: "-50% 0",
-	backgroundImage: `url(${makePixelShadowURL()})`,
+	backgroundImage: SHADOW_IMAGE,
 	backgroundSize: "100% 100%",
 	imageRendering: "pixelated",
 	pointerEvents: "none",
@@ -219,6 +270,7 @@ function play(name) {
 	const { frames, fps, loops = Infinity } = ANIMS[name];
 	let i = 0, played = 0;
 	showFrame(frames[0]);
+	playSound(name);
 	timer = setInterval(() => {
 		i++;
 		if (i >= frames.length) {

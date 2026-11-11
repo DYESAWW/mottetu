@@ -5,6 +5,10 @@ body {
 	margin: 0;
 }
 
+.background {
+	background: #1e1e2e;
+}
+
 #ascii-background {
 	position: fixed;
 	inset: 0;
@@ -27,8 +31,6 @@ body {
 	left: 50%;
 	transform: translate(-50%, -50%);
 }
-
-
 
 .center {
 	display: flex;
@@ -153,9 +155,13 @@ body {
 /* ---- box (clicked to reveal the cat) ---- */
 
 
+:root {
+	--drop-time: 2s;                     /* box fall duration, shared with the box's shadow */
+}
+
 #box {
 	--drop-distance: calc(50vh + 64px);
-	animation: drop-from-above 2s ease-in-out both;
+	animation: drop-from-above var(--drop-time) ease-in-out both;
 	position: absolute;
 	left: calc(50% - 64px);
 	top:  calc(50% - 64px);
@@ -239,4 +245,48 @@ body {
 		visibility: hidden;
 		translate: 0 25px;
 	}
+}
+
+
+/* ---- box shadow ---- */
+
+/* Same pixel shadow as the cat's (cat.js publishes it as --pixel-shadow), twice as big.
+   Cat shadow = 55% x 16% of its 128px frame; centre 28.16px above the frame's bottom.
+   The box shares the cat's frame size and position, so the centre is 50% + 35.84px. */
+#box-shadow {
+	position: absolute;
+	left: 50%;
+	top: calc(50% + 35.84px);
+	width:  calc(128px * 0.55 * 2);
+	height: calc(128px * 0.16 * 2);
+	translate: -50% 10%;
+	background-image: var(--pixel-shadow);
+	background-size: 100% 100%;
+	image-rendering: pixelated;
+	pointer-events: none;
+	z-index: 0;                          /* under the box (1) and the cat (2) */
+	animation: box-shadow-in var(--drop-time) ease-in-out both;
+	
+}
+
+/* Same keyframe offsets and easing as drop-from-above, so the shadow grows in step with the fall.
+   Halfway down (80%) it matches the cat's shadow while grabbed (scale .55, opacity .5);
+   on landing it is full size. */
+@keyframes box-shadow-in {
+	0%   { scale: 0.1;  opacity: 0; }
+	25%  { scale: 0.1;  opacity: 0; }
+	80%  { scale: 0.55; opacity: 0.5; }
+	100% { scale: 1;    opacity: 1; }
+}
+
+/* fades together with the box (same timing as fade-out; the shadow doesn't sink with it) */
+#box.fade-out + #box-shadow {
+	animation: box-shadow-out 0.8s ease-out both;
+}
+
+@keyframes box-shadow-out {
+	0%   { opacity: 1; visibility: visible; }
+	50%  { opacity: 1; visibility: visible; }
+	60%  { opacity: 0.9; visibility: visible; }
+	100% { opacity: 0; visibility: hidden; }
 }
