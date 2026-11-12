@@ -295,7 +295,7 @@ body {
 .bg {
 	margin: 0;
 	min-height: 100vh;
-	background: url("/assets/floor2.png") repeat;
+	background: url("../assets/floor2.png") repeat;
 	background-size: 16px;
 }
 /*the button for the flashlight website */
@@ -305,7 +305,7 @@ body {
 	border: none;
 	padding: 0;
 	cursor: pointer;
-	background: url("/assets/button.png") no-repeat;
+	background: url("../assets/button.png") no-repeat;
 	background-position: -1100px -470px;
 	background-size: 3040px 1440px;
 	image-rendering: pixelated;
