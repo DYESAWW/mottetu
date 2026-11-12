@@ -11,8 +11,8 @@ const SWING_MAX_DEG = 8;
 const SWING_GAIN = 0.008;
 const SWING_SWAY_DEG = 2; 
 
-const DROP_DIST = 120;
-const DROP_MS = 350;
+const DROP_DIST = 50;
+const DROP_MS = 200;
 
 const FLEE_SPREAD_DEG = 60;
 // If the cat is cornered and nothing fits inside the cone, widen to +/- 90deg (slide along the wall,
@@ -68,8 +68,8 @@ const IDLE_ANIMS = ["idleItchLeft", "idleItchRight", "idleWashSit", "idleMeowSit
 
 // ---- sound effects ----
 const SOUNDS = {
-	idleMeowSit: "/assets/meow.mp3",
-	awp:  "/assets/awp.mp3",     // example: add more sounds here
+	idleMeowSit: "../assets/meow.mp3",
+	awp:  "../assets/awp.mp3",     // example: add more sounds here
 };
 const SOUND_VOLUME = 0.1;          // from 0 to 1
 

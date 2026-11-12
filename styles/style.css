@@ -106,7 +106,7 @@ body {
 
 .sprite {
 	width: 32px; height: 32px;        /* one frame size*/
-	background: url("/assets/cat.png") no-repeat;
+	background: url("../assets/cat.png") no-repeat;
 	image-rendering: pixelated;
 	transform: scale(4);
 	transform-origin: top left;
@@ -128,7 +128,7 @@ body {
 	inset: calc(var(--shake) * -2); 
 	z-index: -1;
 	pointer-events: none;
-	background: url("/assets/floor.png");
+	background: url("../assets/floor.png");
 	background-size: calc(100vw / 33);
 	background-position: calc(var(--shake) * 2) calc(var(--shake) * 2);
 }
@@ -171,7 +171,7 @@ body {
 
 .box-sprite {
 	width: 32px; height: 32px;       /* one frame size */
-	background: url("/assets/box.png") no-repeat;
+	background: url("../assets/box.png") no-repeat;
 	image-rendering: pixelated;
 	transform: scale(4);
 	transform-origin: top left;
