@@ -290,7 +290,7 @@ body {
 	60%  { opacity: 0.9; visibility: visible; }
 	100% { opacity: 0; visibility: hidden; }
 }
-
+/*tuleb commentid eestikeelseks muuta*/
 /*generates the background for the flashlight website */
 .bg {
 	margin: 0;
@@ -303,7 +303,7 @@ body {
 .button {
 	width: 180px;
 	height: 90px;
-	position: absolute;
+	position: fixed;
 	border: none;
 	padding: 0;
 	cursor: pointer;
@@ -311,6 +311,7 @@ body {
 	background-position: -550px -255px;
 	background-size: 1520px 770px;
 	image-rendering: pixelated;
+	overflow: hidden;
 
 }
 /*when hovering over the button it moves the sprite sheet to the pressed down button */
@@ -331,7 +332,7 @@ body {
 .cow {
 	width: 160px;
 	height: 160px;
-	position:absolute;
+	position:fixed;
 	background: url("../assets/cow.png") no-repeat;
 	background-size: contain;
 	image-rendering: pixelated;
@@ -339,9 +340,10 @@ body {
 	padding: 0;
 	display: none;
 	animation: slide-down 1s, flip 3s;
+	overflow: hidden;
 	
 }
-/*keerab objekti z teljel 4 korda ümber */
+/*lehm lendab ringikujuliselt*/
 @keyframes flip {
 	
 	from { transform: rotateZ(1440deg) translateY(400%)}
