@@ -296,24 +296,26 @@ body {
 	margin: 0;
 	min-height: 100vh;
 	background: url("../assets/floor2.png") repeat;
-	background-size: 16px;
+	background-size: 64px;
+	cursor:var(--reveal, none);
 }
 /*the button for the flashlight website */
 .button {
-	width: 360px;
-	height: 180px;
+	width: 180px;
+	height: 90px;
+	position: absolute;
 	border: none;
 	padding: 0;
 	cursor: pointer;
 	background: url("../assets/button.png") no-repeat;
-	background-position: -1100px -470px;
-	background-size: 3040px 1440px;
+	background-position: -550px -255px;
+	background-size: 1520px 770px;
 	image-rendering: pixelated;
 
 }
 /*when hovering over the button it moves the sprite sheet to the pressed down button */
 .button:hover {
-	background-position: -1580px -470px;
+	background-position: -790px -255px;
 }
 /*Overlays the entire screen with darkness, except around the cursor. Deafult flashlight coordinates are set to be in the middle of the screen. Updates the flashlight coordinates via flashlight.js */
 .spookymode {
@@ -322,8 +324,27 @@ body {
 	min-height: 100vh;
 	min-width: 100%;
 	z-index: 9999;
-	background: radial-gradient(circle 150px at var(--x,50%) var(--y,50%), transparent 0%, rgba(0,0,0,0.98) 80%);
+	background: radial-gradient(circle var(--z,150px) at var(--x,50%) var(--y,50%), transparent var(--clear,0%), rgba(0,0,0,0.98) 80%);
 	pointer-events: none;
+}
+
+.cow {
+	width: 160px;
+	height: 160px;
+	position:absolute;
+	background: url("../assets/cow.png") no-repeat;
+	background-size: contain;
+	image-rendering: pixelated;
+	border: none;
+	padding: 0;
+	display: none;
+	animation: slide-down 1s, flip 3s;
+	
+}
+/*keerab objekti z teljel 4 korda ümber */
+@keyframes flip {
+	
+	from { transform: rotateZ(1440deg) translateY(400%)}
 }
 
 
