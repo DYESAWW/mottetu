@@ -1,0 +1,58 @@
+
+* { 
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    color: white;
+    background-color: #000000;
+}
+
+canvas {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    inset: 0;
+    touch-action: none;
+    background-color: #000000;
+}
+
+header {
+    position: absolute;
+    z-index: 2;
+    top: 20px;
+    left: 20px;
+}
+
+
+.nupud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+button {
+    padding: 11px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+.info {
+    position: absolute;
+    z-index: 2;
+    bottom: 20px;
+    left: 20px;
+    padding: 12px 18px;
+    background: #1f2937ee;
+    border-radius: 10px;
+}
