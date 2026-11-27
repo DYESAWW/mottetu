@@ -69,6 +69,7 @@ function update(time) {
 
     for (const p of balls) {
         if (p !== dragPall) {
+            const bounce = gravity === 0 ? 1 : 0.85;
 
             // Gravitatsioon
             p.vy += gravity * dt;
@@ -77,40 +78,43 @@ function update(time) {
             p.x += p.vx * dt;
             p.y += p.vy * dt;
 
-            // Väike õhutakistus
-            p.vx *= Math.pow(0.998, dt);
-
+            // ohutakistus
+            if (gravity !== 0) {
+                p.vx *= Math.pow(0.998, dt);
+            }
+            
             // Vasak sein
             if (p.x - p.r < 0) {
                 p.x = p.r;
-                p.vx = Math.abs(p.vx) * 0.85;
+                p.vx = Math.abs(p.vx) * bounce;
             }
 
             // Parem sein
             if (p.x + p.r > width) {
                 p.x = width - p.r;
-                p.vx = -Math.abs(p.vx) * 0.85;
+                p.vx = -Math.abs(p.vx) * bounce;
             }
 
             // Lagi
             if (p.y - p.r < 0) {
                 p.y = p.r;
-                p.vy = Math.abs(p.vy) * 0.85;
+                p.vy = Math.abs(p.vy) * bounce;
             }
 
-            // Põrand
+            // Porand
             if (p.y + p.r > height) {
                 p.y = height - p.r;
-                p.vy = -Math.abs(p.vy) * 0.85;
+                p.vy = -Math.abs(p.vy) * bounce;
 
                 if (Math.abs(p.vy) < 0.7) {
                     p.vy = 0;
                 }
             }
         }
-
+    
         drawBall(p);
     }
+
 
     requestAnimationFrame(update);
 }
@@ -120,7 +124,8 @@ function mousePos(e) {
     return { x: e.clientX, y: e.clientY };
 }
 
-// Klikkides lisame palli või hakkame seda liigutama
+
+// Klikkides lisame palli voi hakkame seda liigutama
 canvas.addEventListener("pointerdown", (e) => {
     const mouse = mousePos(e);
 
@@ -159,25 +164,44 @@ function releaseBall() {
 canvas.addEventListener("pointerup", releaseBall);
 canvas.addEventListener("pointercancel", releaseBall);
 
+// Nupp saab classi vajutatud
+function buttonAnimation(btn, duration = 100) {
+    btn.classList.add("pressed");
+    
+    setTimeout(() => {
+        btn.classList.remove("pressed");
+    }, duration);
+}
+
 // Lisa pall nupp
-document.getElementById("lisa").addEventListener("click", () => {
+document.getElementById("lisa").addEventListener("click", (e) => {
     lisaPall(width / 2, 120);
+    buttonAnimation(e.currentTarget);
 });
 
-// Gravitatsioon sisse/välja
-document.getElementById("gravitatsioon").addEventListener("click", (e) => {
+// Gravitatsioon sisse/valja
+const gravityBtn = document.getElementById("gravitatsioon");
+gravityBtn.classList.remove("pressed");
+
+gravityBtn.addEventListener("click", () => {
     gravity = gravity === 0 ? 0.35 : 0;
 
-    e.target.textContent = gravity === 0
-        ? "Gravitatsioon: VÄLJAS"
-        : "Gravitatsioon: SEES";
+    if (gravity === 0) {
+        gravityBtn.classList.add("pressed");
+    } else {
+        gravityBtn.classList.remove("pressed");
+    }
 });
 
-// Kustutame kõik pallid
-document.getElementById("kustuta").addEventListener("click", () => {
+// Kustutame koik pallid
+document.getElementById("kustuta").addEventListener("click", (e) => {
     balls.length = 0;
     document.getElementById("arv").textContent = 0;
+    buttonAnimation(e.currentTarget, 1000);
 });
+
+
+
 
 // Kolm palli alguses
 lisaPall(width * 0.4, height * 0.3);
