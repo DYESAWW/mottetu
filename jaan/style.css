@@ -30,21 +30,29 @@ header {
 .nupud {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 16px;
 }
 
-button {
-    padding: 11px 14px;
+
+.pixel-btn {
+    width: 80px;
+    height: 80px;
     border: none;
-    border-radius: 8px;
-    background: #3b82f6;
-    color: white;
-    font-weight: bold;
+    padding: 0;
+    background-color: transparent;
+    background-image: url("../assets/green-button.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
     cursor: pointer;
 }
 
-button:hover {
-    background: #2563eb;
+.pixel-btn.pressed {
+    background-image: url("../assets/red-button.png");
+}
+
+#kustuta.pressed {
+    filter: drop-shadow(0 0 8px red);
 }
 
 .info {
